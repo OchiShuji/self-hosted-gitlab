@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: For hosting a gitlab server
+
+Resources:
+  GitlabVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      InstanceTenancy: default
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: gitlab-vpc
+        - Key: service
+          Value: gitlab
+
+  GitlabPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.20.1.0/24
+      VpcId: !Ref GitlabVPC
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: gitlab-vpc-PublicSubnet1
+        - Key: service
+          Value: gitlab
+
+  GitlabPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.20.11.0/24
+      VpcId: !Ref GitlabVPC
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: gitlab-vpc-PublicSubnet2
+        - Key: service
+          Value: gitlab
+
+  GitlabVPCIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags:
+        - Key: Name
+          Value: gitlab-vpc-igw
+        - Key: service
+          Value: gitlab
+
+  GitlabVPCIGWAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref GitlabVPCIGW
+      VpcId: !Ref GitlabVPC
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref GitlabVPC
+      Tags:
+        - Key: Name
+          Value: Public Route
+        - Key: service
+          Value: gitlab
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GitlabVPCIGW
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref GitlabVPCIGW
+
+  PublicSubnet1Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref GitlabPublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+    
+Outputs:
+  VPCID:
+    Description: VPC ID
+    Value: !Ref GitlabVPC
+    Export:
+      Name: !Sub ${AWS::StackName}-VPCID
+
+  PublicSubnet1:
+    Description: PublicSubnet1
+    Value: !Ref GitlabPublicSubnet1
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicSubnet1
+
+  PublicSubnet2:
+    Description: PublicSubnet2
+    Value: !Ref GitlabPublicSubnet2
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicSubnet2

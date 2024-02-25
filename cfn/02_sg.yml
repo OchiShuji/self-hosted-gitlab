@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Security groups for EC2 and ALB
+
+Parameters:
+  VPCStack:
+    Type: String
+    Default: gitlab-vpc
+
+Resources:
+  SecurityGroupLB:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: gitlab-lb-sg
+      GroupDescription: !Ref AWS::StackName
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      VpcId:
+        Fn::ImportValue: !Sub ${VPCStack}-VPCID
+      Tags:
+        - Key: service
+          Value: gitlab
+  
+  SecurityGroupEC2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: gitlab-ec2-sg
+      GroupDescription: Security Group for EC2 Web Server
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      VpcId:
+        Fn::ImportValue: !Sub ${VPCStack}-VPCID
+      Tags: 
+        - Key: service
+          Value: gitlab
+
+  SecurityGroupEgressLB:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      CidrIp: 0.0.0.0/0
+      GroupId: !GetAtt SecurityGroupLB.GroupId
+      
+  SecurityGroupIngressEC2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId: !GetAtt SecurityGroupLB.GroupId
+      GroupId: !GetAtt SecurityGroupEC2.GroupId
+
+Outputs:
+  SecurityGroupLB:
+    Value: !Ref SecurityGroupLB
+    Export:
+      Name: !Sub ${AWS::StackName}-SecurityGroupLB
+  SecurityGroupEC2:
+    Value: !Ref SecurityGroupEC2
+    Export:
+      Name: !Sub ${AWS::StackName}-SecurityGroupEC2
+
