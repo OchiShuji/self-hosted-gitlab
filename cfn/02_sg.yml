@@ -27,7 +27,7 @@ Resources:
         - Key: service
           Value: gitlab
   
-  SecurityGroupEC2:
+  SecurityGroupEC2Gitlab:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: gitlab-ec2-sg
@@ -36,7 +36,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 153.242.115.0/32
+          CidrIp: a.b.c.d/32
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
