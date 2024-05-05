@@ -28,7 +28,7 @@ Resources:
         - Key: service
           Value: gitlab
 
-  GitlabPublicSubnet2:
+  GitlabPrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       CidrBlock: 10.20.11.0/24
@@ -37,7 +37,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: gitlab-vpc-PublicSubnet2
+          Value: gitlab-vpc-PrivateSubnet1
         - Key: service
           Value: gitlab
 
@@ -74,12 +74,28 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref GitlabVPCIGW
 
+  PrivateRouteTable:
+  Type: AWS::EC2::RouteTable
+  Properties:
+    VpcId: !Ref GitlabVPC
+    Tags:
+      - Key: Name
+        Value: Private Route
+      - Key: service
+        Value: gitlab
+
   PublicSubnet1Association:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref GitlabPublicSubnet1
       RouteTableId: !Ref PublicRouteTable
-    
+  
+  PrivateSubnet1Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref GitlabPrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
 Outputs:
   VPCID:
     Description: VPC ID
@@ -93,8 +109,8 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-PublicSubnet1
 
-  PublicSubnet2:
-    Description: PublicSubnet2
-    Value: !Ref GitlabPublicSubnet2
+  PrivateSubnet1:
+    Description: PublicPrivate
+    Value: !Ref GitlabPrivateSubnet1
     Export:
-      Name: !Sub ${AWS::StackName}-PublicSubnet2
+      Name: !Sub ${AWS::StackName}-PrivateSubnet1

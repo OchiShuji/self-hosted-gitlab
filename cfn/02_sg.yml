@@ -36,7 +36,13 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
+          CidrIp: 153.242.115.0/32
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
           CidrIp: 0.0.0.0/0
+        - IpProtocol: -1
+          CidrIp: 10.20.0.0/16
       VpcId:
         Fn::ImportValue: !Sub ${VPCStack}-VPCID
       Tags: 

@@ -52,17 +52,13 @@ Resources:
         # Reconfigure GitLab
         gitlab-ctl reconfigure
 
+        #Install certbot
+        amazon-linux-extras install -y epel
+        yum install -y certbot
+
       Tags:
         - Key: Name
           Value: gitlab-server
-        - Key: service
-          Value: gitlab
-
-  ElasticIP:
-    Type: AWS::EC2::EIP
-    Properties:
-      InstanceId: !Ref EC2Server01
-      Tags:
         - Key: service
           Value: gitlab
 

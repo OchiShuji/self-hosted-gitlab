@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: EC2 for hosting a gitlab server
+
+Parameters:
+  VPCStack:
+    Type: String
+    Default: gitlab-vpc
+  SGStack:
+    Type: String
+    Default: gitlab-sg
+  EC2AMI:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+  KCServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref EC2AMI
+      InstanceType: t2.micro
+      SubnetId: 
+        Fn::ImportValue: !Sub ${VPCStack}-PublicSubnet1
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub ${SGStack}-SecurityGroupEC2
+      KeyName: !Ref EC2KeyPair
+      UserData: !Base64 |
+        #!/bin/bash
+
+        #Install openjdk-17
+        yum install java-17-amazon-corretto-devel -y
+
+        #Install keycloak
+        cd /opt
+        wget https://github.com/keycloak/keycloak/releases/download/24.0.3/keycloak-24.0.3.zip
+        unzip keycloak-24.0.3.zip
+        rm -f ./keycloak-24.0.3.zip
+
+        #Install certbot
+        amazon-linux-extras install -y epel
+        yum install -y certbot
+
+        
+      Tags:
+        - Key: Name
+          Value: keycloak-server
+        - Key: service
+          Value: gitlab
+
+  EC2KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: gitlab-kc-server-keypair
+      Tags:
+        - Key: service
+          Value: gitlab
+
+Outputs:
+  EC2Server01:
+    Value: !Ref KCServer
+    Export:
+      Name: !Sub ${AWS::StackName}-EC2Server01
